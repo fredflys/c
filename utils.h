@@ -3,6 +3,8 @@
 // macro examples
 #define PRINTLN(format, ...) printf(format"\n", ##__VA_ARGS__)
 #define PRINTINT(value) printf(#value": %d\n", (int) value)
+#define PRINTLONG(value) printf(#value": %ld\n", (long) value)
+#define PRINTDBLE(value) printf(#value": %f\n", (long) value)
 #define PRINTPTR(ptr) printf(#ptr": %p\n", (void *) ptr)
 #define PRINTCHAR(value) printf(#value": %c\n", value)
 #define PRINTHEX(value) printf(#value": %x\n", value)
