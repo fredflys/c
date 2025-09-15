@@ -54,4 +54,4 @@ jobs:
       run: |
         aws s3 cp "s3://fredxu-bucket/${{ needs.upload.outputs.filename }}" visitors.csv
     - name: Verify content
-      run: cat downloaded-file.txt
+      run: cat visitors.csv
