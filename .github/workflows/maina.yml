@@ -60,7 +60,7 @@ jobs:
           cat downloaded-file.txt
           # Add any verification steps here (e.g., checksum, content checks)
       - name: Upload downloaded file as GitHub Actions artifact (optional - for workflow run access)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: downloaded-artifact-from-cloud
           path: downloaded-file.txt
