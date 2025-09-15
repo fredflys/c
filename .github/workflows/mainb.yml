@@ -1,0 +1,57 @@
+name: Cloud Storage Artifact Transfer B
+
+
+on:
+  workflow_dispatch: # Manually triggerable
+  push:
+    branches: [main]
+
+
+env:
+  AWS_REGION: us-east-1  # Change to your preferred region
+  S3_BUCKET: fredxu-bucket
+
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create sample file
+      run: |
+        echo "This is a test artifact" > generated-file.txt
+        echo "Generated at $(date)" >> generated-file.txt
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+
+    - name: Upload to S3
+      run: |
+        FILE_NAME="artifact-${{ github.run_id }}.txt"
+        aws s3 cp generated-file.txt "s3://fredxu-bucket/$FILE_NAME"
+        echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
+    - name: Pass filename to download job
+      id: set-output
+      run: echo "filename=artifact-${{ github.run_id }}.txt" >> $GITHUB_OUTPUT
+
+
+  download:
+    runs-on: ubuntu-latest
+    needs: upload
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+
+    - name: Download from S3
+      run: |
+        aws s3 cp "s3://fredxu-bucket/${{ needs.upload.outputs.filename }}" downloaded-file.txt
+    - name: Verify content
+      run: cat downloaded-file.txt
