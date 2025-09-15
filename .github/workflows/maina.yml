@@ -1,0 +1,66 @@
+name: Cross-Cloud Artifact Transfer
+
+
+on:
+  workflow_dispatch: # Manual trigger for demonstration
+  # You can also trigger on push, pull_request, schedule, etc.
+
+
+env:
+  ARTIFACT_NAME: my-artifact # Name for your artifact (used in S3 path)
+  FILE_TO_TRANSFER: visitor.csv # Path to the file you want to transfer
+  S3_BUCKET_NAME: fredxu-bucket # Replace with your S3 bucket name
+  AWS_REGION: us-east-1 # Replace with your AWS region (e.g., us-west-2)
+
+
+jobs:
+  upload-artifact-to-cloud:
+    runs-on: ubuntu-latest # Job running in Cloud Location A (e.g., AWS)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+
+      - name: Create file to upload (example)
+        run: |
+          mkdir -p path/to/your
+          echo "This is a sample file for cross-cloud transfer." > ${{ env.FILE_TO_TRANSFER }}
+      - name: Configure AWS Credentials (for upload)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_UPLOAD }} # Secret for Cloud Location A upload
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_UPLOAD }} # Secret for Cloud Location A upload
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      - name: Upload artifact to S3
+        run: |
+          aws s3 cp ${{ env.FILE_TO_TRANSFER }} s3://${{ env.S3_BUCKET_NAME }}/${{ env.ARTIFACT_NAME }}
+  download-artifact-from-cloud:
+    runs-on: ubuntu-latest # Job running in Cloud Location B (e.g., Azure, GCP, another AWS region)
+    needs: upload-artifact-to-cloud # Ensure upload job completes first
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+
+      - name: Configure AWS Credentials (for download)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DOWNLOAD }} # Secret for Cloud Location B download
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DOWNLOAD }} # Secret for Cloud Location B download
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      - name: Download artifact from S3
+        run: |
+          aws s3 cp s3://${{ env.S3_BUCKET_NAME }}/${{ env.ARTIFACT_NAME }} downloaded-file.txt
+      - name: Verify downloaded file (optional)
+        run: |
+          cat downloaded-file.txt
+          # Add any verification steps here (e.g., checksum, content checks)
+      - name: Upload downloaded file as GitHub Actions artifact (optional - for workflow run access)
+        uses: actions/upload-artifact@v3
+        with:
+          name: downloaded-artifact-from-cloud
+          path: downloaded-file.txt
